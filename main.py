@@ -9,6 +9,7 @@ Uso:
 import sys
 from gramatica import cargar_gramatica
 from simplificacion import eliminar_epsilon, eliminar_unitarias, eliminar_inutiles
+from simplificacion import convertir_a_cnf, esta_en_cnf
 
 def main():
     if len(sys.argv) < 2:
@@ -32,6 +33,14 @@ def main():
     print("\n=== Eliminando simbolos inutiles ===")
     g3 = eliminar_inutiles(g2)
     g3.mostrar("Gramatica sin simbolos inutiles:")
+    
+    print("\n=== Convirtiendo a Forma Normal de Chomsky ===")
+    g4 = convertir_a_cnf(g3)
+    g4.mostrar("Gramatica en CNF:")
+    if esta_en_cnf(g4):
+        print("  Verificacion: toda produccion es A -> B C  o  A -> a   (esta en CNF)")
+    else:
+        print("  Verificacion: ERROR, la gramatica NO quedo en CNF")
 
 
 main()

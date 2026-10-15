@@ -263,3 +263,92 @@ def eliminar_inutiles(g, verbose=True):
         for cuerpo in g1.P[cabeza]:
             g2.agregar(cabeza, cuerpo)
     return g2
+
+#CONVERTIR A FORMA NORMAL DE CHOMSKY (CNF)
+
+def nombre_nuevo(g, base):
+    """Devuelve un nombre que no choque con ninguna variable de g (agrega ' si hace falta)."""
+    nombre = base
+    while nombre in g.P:
+        nombre = nombre + "'"
+    return nombre
+
+
+def esta_en_cnf(g):
+    """Revisa que toda produccion sea A -> B C  o  A -> a."""
+    for cabeza in g.V:
+        for cuerpo in g.P[cabeza]:
+            if len(cuerpo) == 1 and cuerpo[0] not in g.P:
+                continue                                           # A -> a
+            if len(cuerpo) == 2 and cuerpo[0] in g.P and cuerpo[1] in g.P:
+                continue                                           # A -> B C
+            return False
+    return True
+
+
+def convertir_a_cnf(g, verbose=True):
+    # ---- Construccion (a): terminales dentro de cuerpos largos ----
+    if verbose:
+        print("  Construccion (a) - terminales en cuerpos de longitud 2 o mas:")
+    g1 = Gramatica()
+    g1.S = g.S
+    for cabeza in g.V:
+        g1.agregar_variable(cabeza)
+
+    var_terminal = {}                                  # terminal -> su variable nueva
+    for cabeza in g.V:
+        for cuerpo in g.P[cabeza]:
+            if len(cuerpo) < 2:
+                g1.agregar(cabeza, cuerpo)             # A -> a ya esta bien
+                continue
+            nuevo_cuerpo = []
+            for simbolo in cuerpo:
+                if simbolo in g.P:                     # es variable, se deja igual
+                    nuevo_cuerpo.append(simbolo)
+                else:                                  # es terminal: usar su variable
+                    if simbolo not in var_terminal:
+                        nombre = nombre_nuevo(g1, "T_" + simbolo)
+                        g1.agregar_variable(nombre)
+                        g1.agregar(nombre, [simbolo])
+                        var_terminal[simbolo] = nombre
+                        if verbose:
+                            print(f"    {nombre} -> {simbolo}")
+                    nuevo_cuerpo.append(var_terminal[simbolo])
+            g1.agregar(cabeza, nuevo_cuerpo)
+
+    # ---- Construccion (b): partir cuerpos de longitud 3 o mas ----
+    if verbose:
+        print("  Construccion (b) - partiendo cuerpos de longitud 3 o mas:")
+    g2 = Gramatica()
+    g2.S = g1.S
+    for cabeza in g1.V:
+        g2.agregar_variable(cabeza)
+
+    var_cola = {}                                      # cola (tupla) -> variable C
+    contador = 0
+    for cabeza in g1.V:
+        for cuerpo in g1.P[cabeza]:
+            if len(cuerpo) <= 2:
+                g2.agregar(cabeza, cuerpo)
+                continue
+            actual = cabeza
+            resto = cuerpo
+            terminado = False
+            while len(resto) > 2 and not terminado:
+                cola = tuple(resto[1:])
+                if cola in var_cola:                   # esa cola ya tiene su variable
+                    g2.agregar(actual, [resto[0], var_cola[cola]])
+                    terminado = True
+                else:
+                    contador += 1
+                    nombre = nombre_nuevo(g2, "C" + str(contador))
+                    g2.agregar_variable(nombre)
+                    var_cola[cola] = nombre
+                    g2.agregar(actual, [resto[0], nombre])
+                    if verbose:
+                        print(f"    {actual} -> {resto[0]} {nombre}   (y {nombre} sigue con {' '.join(cola)})")
+                    actual = nombre
+                    resto = resto[1:]
+            if not terminado:
+                g2.agregar(actual, resto)
+    return g2
