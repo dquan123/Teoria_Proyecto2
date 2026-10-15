@@ -102,3 +102,59 @@ def eliminar_epsilon(g, verbose=True):
     if verbose and g.S in anulables:
         print(f"    Nota: {g.S} es anulable, entonces epsilon estaba en L(G) y ya no estara en L(G1).")
     return g1
+
+
+
+#ELIMINAR PRODUCCIONES UNITARIAS
+
+def es_unitaria(g, cuerpo):
+    """Una produccion unitaria es A -> B: un cuerpo con UN solo simbolo y que es variable."""
+    return len(cuerpo) == 1 and cuerpo[0] in g.P
+
+
+def encontrar_parejas_unitarias(g, verbose=True):
+    parejas = []
+    for A in g.V:
+        parejas.append((A, A))                     # BASE
+
+    cambio = True
+    while cambio:
+        cambio = False
+        for (A, B) in list(parejas):               # list(...) = copia, porque parejas crece
+            for cuerpo in g.P[B]:
+                if es_unitaria(g, cuerpo):
+                    C = cuerpo[0]
+                    if (A, C) not in parejas:
+                        parejas.append((A, C))
+                        cambio = True
+                        if verbose:
+                            print(f"    ({A},{B}) y {B} -> {C}  dan  ({A},{C})")
+    return parejas
+
+
+def eliminar_unitarias(g, verbose=True):
+    """
+    Construye G1 sin producciones unitarias.
+
+    Paso 1: encontrar todas las parejas unitarias (A, B).
+    Paso 2: por cada pareja (A, B), agregar A -> alfa por cada B -> alfa que NO sea unitaria.
+    """
+    if verbose:
+        print("  Paso 1 - Parejas unitarias:")
+    parejas = encontrar_parejas_unitarias(g, verbose)
+    if verbose:
+        print(f"    Parejas = {parejas}")
+        print("  Paso 2 - Construyendo producciones de G1:")
+
+    g1 = Gramatica()
+    g1.S = g.S
+    for cabeza in g.V:
+        g1.agregar_variable(cabeza)
+
+    for (A, B) in parejas:
+        for cuerpo in g.P[B]:
+            if not es_unitaria(g, cuerpo):
+                g1.agregar(A, cuerpo)
+                if verbose and A != B:
+                    print(f"    ({A},{B}): {A} -> {' '.join(cuerpo)}")
+    return g1
