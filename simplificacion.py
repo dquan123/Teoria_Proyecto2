@@ -158,3 +158,108 @@ def eliminar_unitarias(g, verbose=True):
                 if verbose and A != B:
                     print(f"    ({A},{B}): {A} -> {' '.join(cuerpo)}")
     return g1
+
+
+
+# PASO 4: ELIMINAR SIMBOLOS INUTILES
+
+def encontrar_generadores(g, verbose=True):
+    """
+    BASE:       todo terminal se genera a si mismo.
+    INDUCCION:  si A -> X1...Xk y cada Xi es terminal o ya es generador, A es generador.
+
+    Se repite hasta que no se agregue ninguno nuevo (punto fijo).
+    """
+    generadores = []
+    cambio = True
+    while cambio:
+        cambio = False
+        for cabeza in g.V:
+            if cabeza in generadores:
+                continue
+            for cuerpo in g.P[cabeza]:
+                todos_generan = True
+                for simbolo in cuerpo:
+                    # una variable que todavia no es generadora impide que el cuerpo genere
+                    if simbolo in g.P and simbolo not in generadores:
+                        todos_generan = False
+                        break
+                if todos_generan:
+                    generadores.append(cabeza)
+                    cambio = True
+                    if verbose:
+                        print(f"    {cabeza} -> {' '.join(cuerpo)}  =>  {cabeza} genera")
+                    break
+    return generadores
+
+
+def encontrar_alcanzables(g):
+    """
+    BASE:       S es alcanzable.
+    INDUCCION:  si A es alcanzable y A -> alfa, toda variable que aparece en alfa es alcanzable.
+    """
+    alcanzables = [g.S]
+    cambio = True
+    while cambio:
+        cambio = False
+        for cabeza in list(alcanzables):           # copia, porque la lista crece
+            for cuerpo in g.P[cabeza]:
+                for simbolo in cuerpo:
+                    if simbolo in g.P and simbolo not in alcanzables:
+                        alcanzables.append(simbolo)
+                        cambio = True
+    return alcanzables
+
+
+def eliminar_inutiles(g, verbose=True):
+    """
+    Construye G1 sin simbolos inutiles.
+
+    Paso 1: quitar las variables que NO generan (y toda produccion que las use).
+    Paso 2: de lo que queda, quitar las variables que NO son alcanzables desde S.
+    """
+    # ---- Paso 1: generadores ----
+    if verbose:
+        print("  Paso 1 - Variables que generan:")
+    generadores = encontrar_generadores(g, verbose)
+    no_generan = [v for v in g.V if v not in generadores]
+    if verbose:
+        print(f"    Generan    = {generadores}")
+        print(f"    No generan = {no_generan}  (se eliminan junto con las producciones que las usan)")
+
+    g1 = Gramatica()
+    g1.S = g.S
+    for cabeza in g.V:
+        if cabeza in generadores:
+            g1.agregar_variable(cabeza)
+    for cabeza in generadores:
+        for cuerpo in g.P[cabeza]:
+            usa_variable_eliminada = False
+            for simbolo in cuerpo:
+                if simbolo in no_generan:
+                    usa_variable_eliminada = True
+            if not usa_variable_eliminada:
+                g1.agregar(cabeza, cuerpo)
+    if g.S in no_generan:
+        g1.agregar_variable(g.S)                   # S no genera: el lenguaje es vacio
+        if verbose:
+            print(f"    Aviso: {g.S} no genera nada, el lenguaje de la gramatica es vacio.")
+
+    # ---- Paso 2: alcanzables ----
+    if verbose:
+        print("  Paso 2 - Variables alcanzables desde S:")
+    alcanzables = encontrar_alcanzables(g1)
+    no_alcanzables = [v for v in g1.V if v not in alcanzables]
+    if verbose:
+        print(f"    Alcanzables    = {alcanzables}")
+        print(f"    No alcanzables = {no_alcanzables}  (se eliminan)")
+
+    g2 = Gramatica()
+    g2.S = g1.S
+    for cabeza in g1.V:
+        if cabeza in alcanzables:
+            g2.agregar_variable(cabeza)
+    for cabeza in alcanzables:
+        for cuerpo in g1.P[cabeza]:
+            g2.agregar(cabeza, cuerpo)
+    return g2

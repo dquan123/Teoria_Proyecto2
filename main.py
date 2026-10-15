@@ -8,7 +8,7 @@ Uso:
 
 import sys
 from gramatica import cargar_gramatica
-from simplificacion import eliminar_epsilon, eliminar_unitarias
+from simplificacion import eliminar_epsilon, eliminar_unitarias, eliminar_inutiles
 
 def main():
     if len(sys.argv) < 2:
@@ -28,6 +28,10 @@ def main():
     print("\n=== Eliminando producciones unitarias ===")
     g2 = eliminar_unitarias(g1)
     g2.mostrar("Gramatica sin producciones unitarias:")
+    
+    print("\n=== Eliminando simbolos inutiles ===")
+    g3 = eliminar_inutiles(g2)
+    g3.mostrar("Gramatica sin simbolos inutiles:")
 
 
 main()
