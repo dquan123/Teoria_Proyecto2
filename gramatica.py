@@ -44,6 +44,12 @@ class Gramatica:
         if cuerpo not in self.P[cabeza]:
             self.P[cabeza].append(cuerpo)
 
+    def agregar_variable(self, cabeza):
+        """Registra una variable aunque todavia no tenga producciones."""
+        if cabeza not in self.P:
+            self.V.append(cabeza)
+            self.P[cabeza] = []
+
     def terminales(self):
         """T = simbolos de los cuerpos que no tienen produccion propia."""
         T = []
@@ -60,7 +66,10 @@ class Gramatica:
             print(titulo)
         for cabeza in self.V:
             cuerpos = [' '.join(cuerpo) for cuerpo in self.P[cabeza]]
-            print(f"  {cabeza} -> {' | '.join(cuerpos)}")
+            if len(cuerpos) == 0:
+                print(f"  {cabeza} -> (sin producciones)")
+            else:
+                print(f"  {cabeza} -> {' | '.join(cuerpos)}")
 
 
 def cargar_gramatica(ruta):
