@@ -6,6 +6,9 @@ Conversión de una gramática a Forma Normal de Chomsky (CNF) y algoritmo CYK pa
 - [Diego Quan] — [24336]
 - [Alejandro Pérez] — [24136]
 
+## Presentación (Video)
+https://youtu.be/uwzrs03aaTU
+
 ## Descripción
 
 El programa lee una gramática independiente del contexto desde un archivo, la simplifica y la convierte a CNF. Luego pide una frase y aplica el algoritmo CYK. Por cada frase muestra:
